@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import gnupg
 import config
 import os
+import hashlib
 
 app = Flask(__name__)
 
@@ -17,7 +18,8 @@ gpg = gnupg.GPG()
 # Represents the entries in the database
 class Token(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    token = db.Column(db.String(32), unique=True, nullable=False)
+    token = db.Column(db.String(48), unique=True, nullable=False)
+    vault_login = db.Column(db.String(64), nullable=True)
 
 
 @app.route('/sign', methods=['POST'])
@@ -31,8 +33,11 @@ def sign_file():
     if not token:
         return 'Unauthorized', 401
 
-    # Validate the authorization token against the database
-    if not Token.query.filter_by(token=token).first():
+    # Hash the authorization token
+    hashed_token = hashlib.sha256(token.encode()).hexdigest()
+
+    # Validate the hashed authorization token against the database
+    if not Token.query.filter_by(token=hashed_token).first():
         return 'Unauthorized', 401
 
     file = request.files['file']

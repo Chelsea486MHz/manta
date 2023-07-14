@@ -22,6 +22,10 @@ FROM python:3.11.0-alpine
 ENV APP_USER=app
 ENV APP_DIR="/$APP_USER"
 
+# Install GnuPG
+RUN apk update && \
+    apk add --no-cache gnupg
+
 # Add user and group
 RUN addgroup -S $APP_USER && \
     adduser -s /bin/true -u 1000 -D -h $APP_DIR -G $APP_USER $APP_USER

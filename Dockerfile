@@ -56,7 +56,8 @@ RUN rm -fr /var/spool/cron && \
     rm -fr /etc/sysctl* /etc/modprobe.d /etc/modules /etc/mdev.conf /etc/acpi && \
     rm -fr /root && \
     rm -f /etc/fstab && \
-    find /bin /etc /lib /sbin /usr -xdev -type l -exec test ! -e {} \; -delete
+    find /bin /etc /lib /sbin /usr -xdev -type l -exec test ! -e {} \; -delete && \
+    mount -t tmpfs none /tmp
 
 # Python security
 ENV PYTHONDONTWRITEBYTECODE 1

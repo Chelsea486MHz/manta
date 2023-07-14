@@ -1,4 +1,6 @@
-VAULT_SECRET_PATH = 'secret/gpg-keys'
+import os
+
+VAULT_SECRET_PATH = 'secret/gpg_private'
 VAULT_HOST = os.environ.get('VAULT_HOST', 'localhost')
 VAULT_PORT = os.environ.get('VAULT_PORT', '8200')
 

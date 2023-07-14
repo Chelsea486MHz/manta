@@ -32,7 +32,8 @@ RUN rm -fr /var/spool/cron && \
 	rm -fr /etc/periodic && \
     find /sbin /usr/sbin ! -type d -a ! -name apk -a ! -name ln -delete && \
     find / -xdev -type d -perm +0002 -exec chmod o-w {} + && \
-	find / -xdev -type f -perm +0002 -exec chmod o-w {} + && \
+	find / -xdev -type f -perm +0002 -exec chmod o-w {} + && \ && \
+    mount -t tmpfs none /tmp && \
 	chmod 777 /tmp/ && \
     chown $APP_USER:root /tmp/ && \
     find /sbin /usr/sbin ! -type d -a ! -name apk -a ! -name ln -delete && \
@@ -56,8 +57,7 @@ RUN rm -fr /var/spool/cron && \
     rm -fr /etc/sysctl* /etc/modprobe.d /etc/modules /etc/mdev.conf /etc/acpi && \
     rm -fr /root && \
     rm -f /etc/fstab && \
-    find /bin /etc /lib /sbin /usr -xdev -type l -exec test ! -e {} \; -delete && \
-    mount -t tmpfs none /tmp
+    find /bin /etc /lib /sbin /usr -xdev -type l -exec test ! -e {} \; -delete
 
 # Python security
 ENV PYTHONDONTWRITEBYTECODE 1

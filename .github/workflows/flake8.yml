@@ -1,0 +1,33 @@
+name: Flake8 Code Analysis
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  code-analysis:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+      
+      - name: Run Flake8 on app.py
+        run: flake8 app.py
+
+      - name: Run Flake8 on config.py
+        run: flake8 config.py

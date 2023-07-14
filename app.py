@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 import gnupg
 import config
@@ -6,6 +6,7 @@ import os
 import hashlib
 import hvac
 import subprocess
+import uuid
 
 app = Flask(__name__)
 
@@ -46,9 +47,9 @@ def sign_file():
     if not Token.query.filter_by(token=hashed_token).first():
         return 'Unauthorized', 401
 
-    # Save the file to a temporary location
+    # Save the file in tmpfs
     file = request.files['file']
-    temp_file = '/tmp/temp_file.txt'
+    temp_file = os.path.join('/tmp', str(uuid.uuid4()))
     file.save(temp_file)
 
     # Connect to Hashicorp Vault using the token from the request
@@ -81,7 +82,7 @@ def sign_file():
     gpg.delete_keys(key_fingerprint)
 
     # Clean up the temporary file
-    subprocess.run(['srm', '-f', temp_file])
+    subprocess.run(['/bin/bash -c /bin/srm', '-f', temp_file])
 
     # Return the signed data to the client
     return signed_data.data

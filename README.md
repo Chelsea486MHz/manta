@@ -2,7 +2,7 @@
 
 # Safely sign files using GPG within CI/CD pipelines
 
-Manta is a Flask microservice that allows users to sign files using GPG without giving them access to the private key. Manta signs, the users gets the file back.
+Manta is a Flask microservice that allows users to sign files using GPG without giving them access to the private key. Manta signs, the user gets the file back.
 
 # Security features
 

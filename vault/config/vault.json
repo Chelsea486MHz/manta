@@ -1,0 +1,8 @@
+{
+    "ui": "true",
+    "telemetry": {"prometheus_retention_time": "12h"},
+    "backend": {"file": {"path": "/vault/file"}},
+    "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": 1}},
+    "default_lease_ttl": "168h",
+    "max_lease_ttl": "0h"
+}

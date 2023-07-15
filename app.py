@@ -26,7 +26,6 @@ class Token(db.Model):
     __tablename__ = 'tokens'
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(48), unique=True, nullable=False)
-    vault_login = db.Column(db.String(48), nullable=True)
 
 
 @app.route('/sign', methods=['POST'])

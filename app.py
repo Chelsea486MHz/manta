@@ -104,7 +104,7 @@ def sign_file():
     with open(temp_file, "ba+") as target:
         size = target.tell()
     with open(temp_file, "br+") as target:
-        for i in range (3): # Number of shred passes
+        for i in range(3):  # Number of shred passes
             target.seek(0)
             target.write(os.urandom(size))
     os.remove(temp_file)

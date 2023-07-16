@@ -26,9 +26,6 @@ bad_token = metrics.counter("bad_token", "Total number of requests with unauthor
 app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URI
 db = SQLAlchemy(app)
 
-# GPG configuration
-gpg = gnupg.GPG()
-
 # Vault configuration
 vault_client = hvac.Client(url=config.VAULT_URI)
 
@@ -81,6 +78,7 @@ def sign_file():
     gpg_private = secret['data'].get('gpg_private')
 
     # Import the GPG private key
+    gpg = gnupg.GPG(gnupghome=temp_dir)
     imported_key = gpg.import_keys(gpg_private)
 
     # Sign the file using the GPG key

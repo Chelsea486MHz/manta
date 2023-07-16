@@ -4,5 +4,6 @@ USE manta;
 
 CREATE TABLE IF NOT EXISTS tokens (
     id SERIAL PRIMARY KEY,
-    token VARCHAR(48) UNIQUE NOT NULL
+    token VARCHAR(48) UNIQUE NOT NULL,
+    token_vault VARCHAR(512) NOT NULL
 );

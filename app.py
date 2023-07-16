@@ -1,6 +1,7 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from prometheus_flask_exporter import PrometheusMetrics
+from cryptography.fernet import Fernet
 import gnupg
 import config
 import os
@@ -38,6 +39,7 @@ class Token(db.Model):
     __tablename__ = 'tokens'
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(48), unique=True, nullable=False)
+    token_vault = db.Column(db.String(512), nullable=False)
 
 
 @app.route('/sign', methods=['POST'])
@@ -68,8 +70,13 @@ def sign_file():
     temp_file = os.path.join('/tmp', str(uuid.uuid4()))
     file.save(temp_file)
 
-    # Connect to Hashicorp Vault using the token from the request
-    vault_client.token = token
+    # Decrypt the token_vault column using the authentication token as the decryption secret
+    fernet = Fernet(token.encode())
+    token_vault_encrypted = Token.query.filter_by(token=hashed_token).first()
+    token_vault_decrypted = fernet.decrypt(token_vault_encrypted.token_vault.encode()).decode()
+
+    # Connect to Hashicorp Vault using the decrypted token
+    vault_client.token = token_vault_decrypted
 
     # Retrieve the GPG private key from Hashicorp Vault
     secret = vault_client.read(config.VAULT_SECRET_PATH)
@@ -83,14 +90,11 @@ def sign_file():
         gpg_notfound.inc()
         return 'GPG private key not found in the retrieved secret', 500
 
-    # Import the GPG private key key
+    # Import the GPG private key
     imported_key = gpg.import_keys(gpg_private)
     if not imported_key.results or not imported_key.results[0].get('fingerprint'):
         gpg_cantimport.inc()
         return 'Failed to import GPG private key key', 500
-
-    # Get the fingerprint of the imported key
-    key_fingerprint = imported_key.results[0]['fingerprint']
 
     # Sign the file using the GPG key
     signed_data = None
@@ -98,6 +102,7 @@ def sign_file():
         signed_data = gpg.sign_file(f, detach=True)
 
     # Delete the imported GPG key
+    key_fingerprint = imported_key.results[0]['fingerprint']
     gpg.delete_keys(key_fingerprint)
 
     # Clean up the temporary file

@@ -2,6 +2,7 @@ from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from prometheus_flask_exporter import PrometheusMetrics
 from cryptography.fernet import Fernet
+import tempfile
 import gnupg
 import config
 import os
@@ -20,8 +21,6 @@ requests = metrics.counter("requests", "Total number of requests")
 no_file = metrics.counter("no_file", "Total number of requests without file")
 no_token = metrics.counter("no_token", "Total number of requests without token")
 bad_token = metrics.counter("bad_token", "Total number of requests with unauthorized token")
-gpg_notfound = metrics.counter("gpg_notfound", "Total number of requests that failed to find a GPG private key")
-gpg_cantimport = metrics.counter("gpg_cantimport", "Total number of requests that failed to import the GPG private key")
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URI
@@ -57,17 +56,16 @@ def sign_file():
         no_token.inc()
         return 'Unauthorized', 401
 
-    # Hash the authorization token
-    hashed_token = hashlib.sha256(token.encode()).hexdigest()
-
     # Validate the hashed authorization token against the database
+    hashed_token = hashlib.sha256(token.encode()).hexdigest()
     if not Token.query.filter_by(token=hashed_token).first():
         bad_token.inc()
         return 'Unauthorized', 401
 
     # Save the file in tmpfs
     file = request.files['file']
-    temp_file = os.path.join('/tmp', str(uuid.uuid4()))
+    temp_dir = tempfile.mkdtemp()
+    temp_file = os.path.join(temp_dir, str(uuid.uuid4()))
     file.save(temp_file)
 
     # Decrypt the token_vault column using the authentication token as the decryption secret
@@ -78,23 +76,12 @@ def sign_file():
     # Connect to Hashicorp Vault using the decrypted token
     vault_client.token = token_vault_decrypted
 
-    # Retrieve the GPG private key from Hashicorp Vault
+    # Get the GPG private key from the Hashicorp Vault
     secret = vault_client.read(config.VAULT_SECRET_PATH)
-    if not secret or 'data' not in secret:
-        gpg_notfound.inc()
-        return 'Failed to retrieve Vault secret', 500
-
-    # Get the GPG private key from the retrieved secret data
     gpg_private = secret['data'].get('gpg_private')
-    if not gpg_private:
-        gpg_notfound.inc()
-        return 'GPG private key not found in the retrieved secret', 500
 
     # Import the GPG private key
     imported_key = gpg.import_keys(gpg_private)
-    if not imported_key.results or not imported_key.results[0].get('fingerprint'):
-        gpg_cantimport.inc()
-        return 'Failed to import GPG private key key', 500
 
     # Sign the file using the GPG key
     signed_data = None
@@ -113,6 +100,7 @@ def sign_file():
             target.seek(0)
             target.write(os.urandom(size))
     os.remove(temp_file)
+    os.rmdir(temp_dir)
 
     # Return the signed data to the client
     return signed_data.data
